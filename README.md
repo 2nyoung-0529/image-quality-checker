@@ -1,29 +1,41 @@
-# Image Quality Checker
+# 이미지 품질 검사기 (Image Quality Checker)
 
-A small, transparent pre-QC tool for image datasets. It scans a folder, records
-basic metadata, finds byte-identical duplicates and routes obvious issues into
-`PASS`, `REVIEW`, `DROP` or `ERROR` queues.
+이미지 데이터셋의 반복적인 사전 품질 검사를 자동화하는 규칙 기반 도구입니다.
+폴더 안의 이미지를 검사해 기본 메타데이터를 기록하고, 완전히 동일한 중복 파일과
+명백한 규칙 위반을 찾아 `PASS`, `REVIEW`, `DROP`, `ERROR`로 분류합니다.
 
-This project is a refactoring of an earlier QC script. The goal is not to replace a
-human reviewer or claim model-based image understanding; it is to make repetitive,
-deterministic checks reproducible before manual inspection.
+이 프로젝트는 과거에 작성한 이미지 QC 스크립트를 공개 포트폴리오 수준으로
+재구성한 결과입니다. 사람의 판단이나 이미지 이해 모델을 대체하는 것이 아니라,
+수작업 검수 전에 반복 가능한 기초 검사를 수행하는 것을 목적으로 합니다.
 
-## Checks
+## 주요 검사 항목
 
-| Check | Result | Meaning |
+| 검사 항목 | 결과 | 의미 |
 |---|---|---|
-| Minimum width/height | `DROP` | Image is below a configured dimension |
-| SHA-256 exact duplicate | `DROP` | File bytes match an earlier file |
-| Mean brightness threshold | `REVIEW` | Image may be unusually dark or bright |
-| Decode failure | `ERROR` | File cannot be fully decoded as an image |
-| No issue found | `PASS` | No configured rule was triggered |
+| 최소 너비·높이 | `DROP` | 설정한 최소 해상도보다 작음 |
+| SHA-256 완전 중복 | `DROP` | 앞서 검사한 파일과 바이트 단위로 동일함 |
+| 평균 밝기 임계값 | `REVIEW` | 지나치게 어둡거나 밝을 가능성이 있음 |
+| 이미지 디코딩 실패 | `ERROR` | 이미지 전체를 정상적으로 읽을 수 없음 |
+| 문제 미발견 | `PASS` | 설정된 규칙에 해당하지 않음 |
 
-`DROP` is a workflow recommendation based on configured rules, not deletion. The
-program never modifies source images.
+`DROP`은 설정된 규칙에 따른 작업 분류일 뿐, 실제 파일 삭제를 뜻하지 않습니다.
+이 프로그램은 원본 이미지를 수정하거나 삭제하지 않습니다.
 
-## Quick start
+### 상태값을 영어로 유지한 이유
 
-Requires Python 3.11 or later.
+CSV 컬럼명, 상태값, 사유 코드는 후속 데이터 처리와 다른 프로그램과의 연동을 위해
+영어로 유지했습니다.
+
+| 상태값 | 한국어 의미 |
+|---|---|
+| `PASS` | 설정된 문제 없음 |
+| `REVIEW` | 사람의 추가 검토 필요 |
+| `DROP` | 설정 규칙상 제외 권장 |
+| `ERROR` | 파일 처리 실패 |
+
+## 빠른 시작
+
+Python 3.11 이상이 필요합니다.
 
 ```bash
 python -m venv .venv
@@ -33,7 +45,7 @@ pip install -e .
 image-quality-check /path/to/images --output output/results.csv
 ```
 
-Scan subdirectories and use a configuration file:
+하위 폴더까지 탐색하고 별도 설정 파일을 적용하려면 다음과 같이 실행합니다.
 
 ```bash
 image-quality-check /path/to/images \
@@ -42,70 +54,73 @@ image-quality-check /path/to/images \
   --output output/results.csv
 ```
 
-Without installation, set the source path explicitly:
+패키지를 설치하지 않고 실행할 수도 있습니다.
 
 ```bash
 PYTHONPATH=src python -m image_quality_checker /path/to/images
 ```
 
-The command returns `0` after a completed scan and `2` for invalid input,
-configuration or output errors. Individual unreadable images are recorded as
-`ERROR` rows so that one bad file does not stop a batch.
+검사가 정상 완료되면 종료 코드 `0`, 입력·설정·출력 오류가 발생하면 `2`를
+반환합니다. 읽을 수 없는 개별 이미지는 `ERROR` 행으로 기록하므로, 손상 파일
+하나 때문에 전체 배치 검사가 중단되지 않습니다.
 
-## Configuration
+## 설정
 
-Copy `config.example.json` and adjust it for the dataset. CLI `--recursive`
-overrides the corresponding JSON value to `true`. Unknown keys and invalid
-threshold ranges fail early instead of being ignored.
+[`config.example.json`](config.example.json)을 복사한 뒤 데이터셋 기준에 맞게
+수정할 수 있습니다. 명령행의 `--recursive` 옵션은 JSON 설정과 관계없이 하위
+폴더 탐색을 활성화합니다. 알 수 없는 설정 키나 잘못된 임계값은 무시하지 않고
+즉시 오류로 안내합니다.
 
-Brightness is the grayscale mean on a 0–255 scale. Thresholds are dataset-specific;
-the defaults are demonstration values, not universal quality standards.
+밝기는 0~255 범위의 회색조 평균값입니다. 기본 임계값은 기능 설명을 위한 예시이며,
+모든 데이터셋에 통용되는 품질 기준이 아닙니다.
 
-## Output
+## 결과 파일
 
-The UTF-8 CSV includes the relative path, dimensions, color mode, file size,
-brightness, SHA-256 hash, duplicate owner, status and reasons. See
-[`samples/sample_results.csv`](samples/sample_results.csv) for a synthetic example.
-Hashes in that example are placeholders, not real file digests.
+결과는 UTF-8 CSV로 저장됩니다. 상대 경로, 이미지 크기, 색상 모드, 파일 용량,
+평균 밝기, SHA-256 해시, 중복 원본, 상태와 사유를 포함합니다.
+합성 예시는 [`samples/sample_results.csv`](samples/sample_results.csv)에서 확인할
+수 있습니다. 예시 CSV의 해시는 실제 파일 해시가 아닌 자리표시자입니다.
 
-## Tests
+## 테스트
 
 ```bash
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
-The tests create temporary synthetic images and cover low resolution, brightness,
-duplicates and unreadable files.
+테스트는 실행 중 임시 합성 이미지를 생성하며, 저해상도·밝기·완전 중복·손상
+이미지 처리를 검증합니다.
 
-## Limitations
+## 한계
 
-- Duplicate detection is exact; resized or recompressed near-duplicates are not found.
-- Mean brightness cannot distinguish intentional silhouettes, night scenes or local
-  exposure problems. Candidates therefore go to `REVIEW`, not `DROP`.
-- Blur, occlusion and semantic suitability are outside the current deterministic scope.
-- Rule thresholds should be validated against each dataset and QC policy.
+- 중복 검사는 바이트 단위 완전 중복만 탐지합니다. 크기 변경이나 재압축이 발생한
+  유사 이미지는 탐지하지 않습니다.
+- 평균 밝기만으로 의도된 실루엣, 야간 장면, 국부 노출 문제를 구분할 수 없습니다.
+  따라서 밝기 후보는 `DROP`이 아닌 `REVIEW`로 분류합니다.
+- 흐림, 가림, 객체 식별 가능성, 업무 목적 적합성은 현재 규칙 기반 범위에 포함하지
+  않습니다.
+- 임계값은 데이터셋과 실제 QC 정책에 맞춰 별도로 검증해야 합니다.
 
-## Repository structure
+## 저장소 구조
 
 ```text
 image-quality-checker/
-├── src/image_quality_checker/  # reusable package and CLI
-├── tests/                      # synthetic unit tests
-├── samples/                    # example output only
-├── docs/review.md              # comparison with the original versions
-├── config.example.json
-├── pyproject.toml
-├── requirements.txt
+├── src/image_quality_checker/  # 재사용 가능한 패키지와 CLI
+├── tests/                      # 합성 이미지 단위 테스트
+├── samples/                    # 합성 결과 예시
+├── docs/review.md              # 기존 두 버전 비교·개선 기록
+├── config.example.json         # 설정 예시
+├── pyproject.toml              # 패키지 정보
+├── requirements.txt            # 실행 의존성
 └── README.md
 ```
 
-## Privacy and data handling
+## 개인정보 및 데이터 관리
 
-The tool runs locally and does not upload images. Real source images and generated
-outputs are intentionally excluded from this repository; verify usage rights before
-publishing any dataset samples.
+모든 검사는 로컬에서 실행되며 이미지를 외부로 전송하지 않습니다. 실제 원본 이미지와
+실행 결과는 저장소에서 제외했습니다. 공개 샘플을 추가할 때는 이미지 사용 권리를 먼저
+확인해야 합니다.
 
-## License
+## 라이선스
 
-No license is included by default. Add one only after choosing terms appropriate for
-your portfolio and any third-party assets.
+현재 라이선스는 지정하지 않았습니다. 포트폴리오 공개 범위와 제3자 자료의 권리를
+검토한 뒤 적절한 라이선스를 선택할 예정입니다.

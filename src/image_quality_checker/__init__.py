@@ -1,4 +1,4 @@
-"""Rule-based image quality pre-checker."""
+"""규칙 기반 이미지 품질 사전 검사기."""
 
 from .checker import CheckConfig, ImageResult, inspect_directory
 

@@ -1,27 +1,31 @@
-# Original code review
+# 기존 코드 비교 및 개선 기록
 
-## Version comparison
+## 두 버전의 차이
 
-`image_quality_check01.py` is the more complete of the two originals. It keeps the
-resolution, corruption and exact-duplicate checks from `image_quality_check.py`,
-then adds deterministic file ordering, average-brightness candidates, a `REVIEW`
-state and a filename heuristic that prefers a file without `_copy`.
+`image_quality_check01.py`가 `image_quality_check.py`보다 발전된 버전입니다.
+초기 버전의 해상도·손상·완전 중복 검사에 다음 기능이 추가됐습니다.
 
-## Issues addressed
+- 파일 이름 기준의 일관된 정렬
+- 이미지 평균 밝기 계산
+- 추가 검수가 필요한 `REVIEW` 상태
+- 이름에 `_copy`가 없는 파일을 중복 원본으로 우선하는 규칙
 
-- Input/output paths and thresholds were module-level constants with no CLI.
-- Functions lacked complete type hints and reusable result/config models.
-- The first version depended on directory iteration order for duplicate ownership.
-- The `_copy` filename rule was brittle and required repeatedly scanning results.
-- MD5 was adequate for accidental duplicates but SHA-256 is clearer for public use.
-- Image opening did not explicitly force a complete decode with `load()`.
-- Brightness calculation reopened every image and silently swallowed all exceptions.
-- Errors were printed or hidden rather than logged with a reliable exit code.
-- Pandas was used only to write CSV, adding an unnecessary dependency.
-- There were no tests, package metadata, usage guide or documented limitations.
+## 확인된 문제와 개선 내용
 
-## Deliberate scope
+- 전역 상수로 고정돼 있던 입출력 경로와 임계값을 CLI·JSON 설정으로 분리했습니다.
+- 함수마다 흩어져 있던 딕셔너리 대신 설정·결과 데이터 모델을 도입했습니다.
+- 디렉터리 순회 순서에 따라 중복 원본이 달라질 수 있던 문제를 정렬로 해결했습니다.
+- `_copy` 이름에 의존하고 결과 전체를 반복 탐색하던 중복 처리 방식을 제거했습니다.
+- 공개 도구의 의도를 명확히 하기 위해 MD5 대신 SHA-256 해시를 사용했습니다.
+- 이미지 일부만 읽고 정상으로 판단하지 않도록 전체 디코딩을 강제했습니다.
+- 밝기 계산을 위해 같은 이미지를 다시 여는 비효율과 모든 예외를 숨기던 처리를
+  제거했습니다.
+- 단순 출력 또는 무시되던 오류를 로그와 명확한 종료 코드로 처리했습니다.
+- CSV 저장에만 사용하던 Pandas를 제거해 의존성을 줄였습니다.
+- 단위 테스트, 패키지 정보, 실행 설명과 한계 문서를 추가했습니다.
 
-The revised project does not claim that brightness equals semantic quality. Uniform
-thresholds can flag candidates for review, while blur, occlusion, subject visibility
-and task-specific suitability still require domain-aware review or a validated model.
+## 의도적으로 제한한 범위
+
+평균 밝기가 이미지의 의미적 품질을 나타낸다고 주장하지 않습니다. 밝기 임계값은
+사람이 확인할 후보를 선별할 뿐입니다. 흐림, 가림, 객체 가시성, 업무별 적합성은
+도메인 기준을 적용한 사람의 검수나 별도로 검증된 모델이 필요합니다.

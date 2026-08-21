@@ -1,7 +1,7 @@
-"""Core image inspection logic.
+"""이미지 검사의 핵심 로직.
 
-The checks in this module are deterministic heuristics intended to reduce manual
-screening work. They are not a substitute for visual review.
+반복 가능한 규칙으로 수작업 선별 부담을 줄이는 모듈이며, 사람의 육안 검수를
+대체하지 않는다.
 """
 
 from __future__ import annotations
@@ -36,9 +36,9 @@ class CheckConfig:
 
     def __post_init__(self) -> None:
         if self.min_width < 1 or self.min_height < 1:
-            raise ValueError("Minimum dimensions must be positive integers.")
+            raise ValueError("최소 이미지 크기는 1 이상의 정수여야 합니다.")
         if not 0 <= self.dark_threshold < self.bright_threshold <= 255:
-            raise ValueError("Brightness thresholds must satisfy 0 <= dark < bright <= 255.")
+            raise ValueError("밝기 임계값은 0 <= 어두움 < 밝음 <= 255를 만족해야 합니다.")
 
 
 @dataclass
@@ -98,7 +98,7 @@ def inspect_image(file_path: Path, input_dir: Path, config: CheckConfig) -> Imag
 
     try:
         with Image.open(file_path) as image:
-            image.load()  # Force full decoding so truncated data is detected here.
+            image.load()  # 잘린 파일도 감지할 수 있도록 전체 이미지를 디코딩한다.
             oriented = ImageOps.exif_transpose(image)
             result.width, result.height = oriented.size
             result.mode = oriented.mode
@@ -108,7 +108,7 @@ def inspect_image(file_path: Path, input_dir: Path, config: CheckConfig) -> Imag
     except (UnidentifiedImageError, OSError, ValueError) as error:
         result.status = Status.ERROR
         result.reasons = f"unreadable_image: {type(error).__name__}"
-        LOGGER.warning("Could not inspect %s: %s", relative_path, error)
+        LOGGER.warning("이미지를 검사할 수 없습니다: %s (%s)", relative_path, error)
         return result
 
     if result.width is not None and result.height is not None:
@@ -149,12 +149,12 @@ def mark_exact_duplicates(results: list[ImageResult]) -> None:
 
 def inspect_directory(input_dir: Path, config: CheckConfig) -> list[ImageResult]:
     if not input_dir.exists():
-        raise FileNotFoundError(f"Input directory does not exist: {input_dir}")
+        raise FileNotFoundError(f"입력 폴더가 존재하지 않습니다: {input_dir}")
     if not input_dir.is_dir():
-        raise NotADirectoryError(f"Input path is not a directory: {input_dir}")
+        raise NotADirectoryError(f"입력 경로가 폴더가 아닙니다: {input_dir}")
 
     paths = discover_images(input_dir, config)
-    LOGGER.info("Found %d supported image(s) in %s", len(paths), input_dir)
+    LOGGER.info("검사 대상 이미지 %d개를 찾았습니다: %s", len(paths), input_dir)
     results = [inspect_image(path, input_dir, config) for path in paths]
     mark_exact_duplicates(results)
     return results
