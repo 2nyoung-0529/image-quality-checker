@@ -1,0 +1,8 @@
+{
+  "min_width": 300,
+  "min_height": 300,
+  "dark_threshold": 40,
+  "bright_threshold": 220,
+  "extensions": [".jpg", ".jpeg", ".png", ".webp"],
+  "recursive": false
+}

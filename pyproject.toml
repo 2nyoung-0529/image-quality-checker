@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "image-quality-checker"
+version = "1.0.0"
+description = "A transparent, rule-based pre-QC tool for image datasets"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["Pillow>=10.0,<13.0"]
+
+[project.scripts]
+image-quality-check = "image_quality_checker.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

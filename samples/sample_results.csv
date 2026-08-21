@@ -1,0 +1,6 @@
+file_path,file_name,extension,width,height,mode,file_size_bytes,average_brightness,sha256,duplicate_of,status,reasons
+normal.png,normal.png,.png,640,480,RGB,1945,128.0,example_hash_1,,PASS,
+normal_copy.png,normal_copy.png,.png,640,480,RGB,1945,128.0,example_hash_1,normal.png,DROP,exact_duplicate
+small.png,small.png,.png,120,90,RGB,310,128.0,example_hash_2,,DROP,low_resolution
+dark.png,dark.png,.png,640,480,RGB,972,10.0,example_hash_3,,REVIEW,dark_candidate
+broken.png,broken.png,.png,,,,12,,,,ERROR,unreadable_image: UnidentifiedImageError
